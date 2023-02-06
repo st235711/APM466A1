@@ -39,7 +39,7 @@ library(jrvFinance)
 
 \section*{Empirical Questions - 75 points} 
 
-1.
+4.
   \ 
   
   (a) \textbf{The constructed 5-year yield curve is shown below:}
