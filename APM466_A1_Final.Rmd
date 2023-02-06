@@ -1,0 +1,285 @@
+---
+title: "MAT1856/APM466 Assignment 1"
+author: 'Tingjun Kang, Student #: 1005921923'
+date: "February 2023"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(readxl)
+library(tibble)
+library(stringr)
+library(jrvFinance)
+```
+
+\section*{Fundamental Questions - 25 points}
+
+\begin{enumerate}
+    \item \hfill
+    \begin{enumerate}
+        \item 
+        For the government, simply printing more cash will make the monetary aggregate rise in the short term so that could lead to inflation (currency devaluation). But through issuing bonds, government borrows money from market, not only is it non-inflationary, but it also allows for efficient resource allocation, absorbing excess capital while replenishing to where has a lack of capital.
+        \item
+        If the inflation is high, market participant expects rate hike from central bank. Rate hike leads to short-term interest rate increases faster than the long-term rate which leads to long-term part of a yield curve flatten.
+        \item
+        Since the start of the COVID-19 epidemic, the Fed has used quantitative easing (QE) to increase banks' reserve holdings and enable them to lend more money to the general population by buying substantial quantities of Treasury bonds and other assets from banks. As a result, long-term interest rates are lowered, which facilitates borrowing and spending by both individuals and corporations and increases economic activity. 
+    \end{enumerate}
+    \item
+    My basic idea is to select the bonds whose gap between issue day and maturity date is at least 5 years, otherwise I cannot construct the further spot rate, forward rate. And for the convenience of calculation, I try to choose the bonds whose maturity dates with half year consecutive orders. It is also easier for comparing curve wiht similar bonds strucutre. \\ The 11 bonds I choose is: 
+    "CAN 1.75 Mar 23", "CAN 1.5 Jun 23","CAN 2.25 Mar 24","CAN 1.5 Sep 24","CAN 1.25 Mar 25","CAN 0.5 Sep 25","CAN 0.25 Mar 26","CAN 1 Sep 26","CAN 1.25 Mar 27","CAN 2.75 Sep 27","CAN 3.5 Mar 28".
+    \item
+    The eigenvalues and eigenvectors associated with the covariance matrix of multiple stochastic processes represent the direction and magnitude of the variation in the data. The eigenvector with the largest eigenvalue points in the direction of the most significant variation and represents the main direction of the data, while the other eigenvalues and eigenvectors represent the secondary sources of variance and their directions. These results can be used to identify the most important drivers of the returns and to perform dimension reduction. The core idea of PCA is to achieve dimensional reduction to save much computational cost, remain the variables that capture the maximum information (variance) and reduce some insignificant variables.
+   
+    
+\end{enumerate}   
+
+
+\section*{Empirical Questions - 75 points} 
+
+1.
+  \ 
+  
+  (a) \textbf{The constructed 5-year yield curve is shown below:}
+```{r}
+# Import 10 selected bonds with clean close prices
+clean_data <- read_excel("data2_clean.xlsx")
+clean_data = data.frame(clean_data)
+# Import 10 selected bonds with with dirty  prices
+dirty_data <- read_excel("data2_dirty.xlsx")
+dirty_data = data.frame(dirty_data)
+# Create an empty dataframe for storing yields 
+Yields_set<- data.frame(matrix(nrow = 11, ncol=10))
+# Create an empty dataframe for storing spot rates 
+Spots_set <- data.frame(matrix(nrow = 11, ncol=10))
+# Create an empty dataframe for storing forward rates
+forward_set <- data.frame(matrix(nrow=4,ncol = 10))
+# Define date set
+Date = c("2023-01-16","2023-01-17","2023-01-18","2023-01-19","2023-01-20",
+          "2023-01-23","2023-01-24","2023-01-25","2023-01-26","2023-01-27")
+# Rename the columns of each dataframe
+for (i in 1:10){
+  names(Yields_set)[i] = str_c(Date[i]," Yields")
+  names(Spots_set)[i] = str_c(Date[i]," Spots rates")
+  names(forward_set)[i] = str_c(Date[i]," Forward rates")
+}
+names(clean_data)[9] = as.character('Maturity_Date')
+names(dirty_data)[9] =as.character('Maturity_Date')
+dirty_data$Maturity_Date = gsub(dirty_data$Maturity_Date, pattern = 'UTC',replacement = "",fixed = T)
+```
+
+
+```{r}
+# Calculate Yield to maturity
+for (j in 1:11){
+  for (k in 1:10){ 
+    Yields_set[j,k] = bond.yield(Date[k],clean_data[j,9],
+              clean_data[j,4],freq=2,clean_data[j,k+9],comp.freq = 2,
+              redemption_value = 100)
+  }
+}
+```
+
+
+```{r,fig.height=3, fig.width=6}
+# Plot Yield Curve
+interval = seq(0,5,0.5)
+plot(interval, Yields_set$`2023-01-16 Yields`,type='l',col='red',
+     xlab = 'Years from 2023', ylab = "Yield To Maturity(YTM)",main = "5-Year Yield Curves")
+lines(interval,Yields_set$`2023-01-17 Yields`,col='gray')
+lines(interval,Yields_set$`2023-01-18 Yields`,col='blue')
+lines(interval,Yields_set$`2023-01-19 Yields`,col='green')
+lines(interval,Yields_set$`2023-01-20 Yields`,col='orange')
+lines(interval,Yields_set$`2023-01-23 Yields`,col='purple')
+lines(interval,Yields_set$`2023-01-24 Yields`,col='gold')
+lines(interval,Yields_set$`2023-01-25 Yields`,col='brown')
+lines(interval,Yields_set$`2023-01-26 Yields`,col='cyan')
+lines(interval,Yields_set$`2023-01-27 Yields`,col='black')
+legend("topright", Date, lty=c(1,1),lwd=c(2,2), cex=0.3,pch=12, bty="n",
+       col=c("red","gray", "blue","green", "orange","purple","gold","brown",
+             "cyan","black"))
+```
+
+We first import the bond data with clean price. By accessing to R package `jrvFinance`, we use the bulit-in function `bond.yield()` to calculate yield to maturity by converting clean price to dirty price automatically. Then, store these ytm data into a dataframe and plot them with different colors. The ytm curves well-superimposed on top of each other, and generally show the decreaing trend along the years. The inverted yield curve really conform to nowadays economic situation. It is now in a period of high inflation, the market expects interest rate hike. Rate hike affect short-term rate and poll it greater than the long-term rate, so that yield curve inverted. It implies a signal of economic recession.
+
+(b) \textbf{The constructed 1-5 years spot curve is shown below:}
+
+```{r}
+# Calculate the spot rates
+for (i in 1:10){
+  coupon = dirty_data[1,4]*100
+  maturityInYears = dirty_data[1,7]
+  price = clean_data[1,i+9]
+  Spots_set[1,i] = 2*(((0.5*coupon+100)/price)^(1/(2*maturityInYears))-1)
+}
+```
+
+
+```{r,warning=FALSE}
+last_pay_month <- c(4,1,4,4,4,4,4,4,4,4,4)
+mature_in_month_new <- c(1,5,13,19,25,31,37,43,49,55,61)
+
+# Start from the second bond
+for (i in 2:11){
+  for (j in 1:10){
+    pv_sum = 0
+    coupon = dirty_data$Coupon[i]*100
+    maturityInYears = dirty_data[i,7]
+    price = clean_data[i,j+9]
+    future_c_time =seq((6-last_pay_month[i]), 
+                      mature_in_month_new[i], by=6)/12
+    for (k in 1:length(future_c_time)){
+      pv_sum <- pv_sum + 0.5*coupon/(1+Spots_set[i-1,]/2)^(2*future_c_time[k])
+    }
+    price_after_sub <- price-pv_sum
+    Spots_set[i,j] <- 2*(((0.5*coupon+100)/price_after_sub)^(1/(2*maturityInYears))-1)
+    pv_sum = 0
+  }
+}
+```
+
+
+```{r,fig.height=3, fig.width=6}
+# Plot the Spots Curve
+interval = seq(0,5,0.5)
+plot(interval, Spots_set$`2023-01-16 Spots rates`,type='l',col='red',
+     xlab = 'Years from 2023',ylab = "Spot rates",lwd=1, cex=2, 
+     main = "1-5 years Spot Curves")
+lines(interval,Spots_set$`2023-01-17 Spots rates`,col='yellow')
+lines(interval,Spots_set$`2023-01-18 Spots rates`,col='blue')
+lines(interval,Spots_set$`2023-01-19 Spots rates`,col='green')
+lines(interval,Spots_set$`2023-01-20 Spots rates`,col='gray')
+lines(interval,Spots_set$`2023-01-23 Spots rates`,col='purple')
+lines(interval,Spots_set$`2023-01-24 Spots rates`,col='gold')
+lines(interval,Spots_set$`2023-01-25 Spots rates`,col='brown')
+lines(interval,Spots_set$`2023-01-26 Spots rates`,col='cyan')
+lines(interval,Spots_set$`2023-01-27 Spots rates`,col='orange')
+legend("topright", Date, lty=c(1,1),lwd=c(2,2), pch=15,cex=0.5, bty="n",
+       col=c("red","yellow", "blue","green", "gray","purple","gold","brown","cyan","orange"))
+```
+
+We import the bond data with dirty price. The way to calculate the spot rate is by bootstrapping. Based on the relation between drity price and spot rate: $P = \sum_{i}p_{i}e^{-r(t_i)ti}$ (Seco, 2023). First calculate the first year(i = 1), we get $r(t_1) = \frac{log(\frac{p_1}{p})}{t_1}$. $'p_i'$ represents the i-year cash flow, $'P'$ is the dirty price. $'t_i'$ is the year fraction. Similarly, second, third... years follow the same pattern. We use loop for years to achieve it in R. Then generate a well-labeled plot that shows each curves of data superimposed on-top of each other. It shows a similar trend as in yield curves.
+
+(c) \textbf{The constructed forward curve is shown below:}
+
+```{r}
+# Calculate the forward rate
+for (i in seq(2,8,2)){
+  for (j in c(1:10)){
+    one_year_forward <- (1+Spots_set[i+2,j]/2)^(i+2)
+    nth_yr_forward <- (1+Spots_set[i,j]/2)^(2*i/2)
+    forward_set[i/2,j] <- 2*((one_year_forward/nth_yr_forward)^(1/2)-1)
+  }
+}
+```
+
+```{r,fig.height=3, fig.width=6}
+# Plot the Forward Curve
+interval = seq(1,4,1)
+plot(interval, forward_set$`2023-01-16 Forward rates`,type='l',col='red',
+     xlab = 'Years from 2023',ylab = "Forward rates",lwd=1,
+     main = "1-1, 1-2, 1-3, 1-4yr Forward Curves")
+lines(interval,forward_set$`2023-01-17 Forward rates`,col='yellow')
+lines(interval,forward_set$`2023-01-18 Forward rates`,col='blue')
+lines(interval,forward_set$`2023-01-19 Forward rates`,col='green')
+lines(interval,forward_set$`2023-01-20 Forward rates`,col='gray')
+lines(interval,forward_set$`2022-01-17 Forward rates`,col='purple')
+lines(interval,forward_set$`2022-01-18 Forward rates`,col='gold')
+lines(interval,forward_set$`2022-01-19 Forward rates`,col='brown')
+lines(interval,forward_set$`2022-01-20 Forward rates`,col='cyan')
+lines(interval,forward_set$`2023-01-27 Forward rates`,col='orange')
+legend("topleft", Date, lwd=2, cex=0.5,pch=15, bty="n",
+       col=c("red","yellow", "blue","green", "gray","purple","gold","brown","cyan","orange"))
+```
+
+The formal way to contruct the foward curve is by taking the partial differential of the yield curve, which is given by $f(t, T) = r(t, T, T) = -\frac{\partial}{\partial}logP(t,T)$ (Seco, 2023). However, we take the approximate formula $\frac{(1+r_a)^t_a}{(1+r_b)^t_b}-1$ since the time period is not continuous, where "a" is the end future date, "b" is the closer future date (Ross, 2022). These foward rate can be calculated by using loop in R. Then I stored these rates to a dataframe to plot the curves. The well-labeled plots are shown above. The general trend of the foward curve is increasing with fluctuation. 
+
+5.
+  \ 
+  
+  5.1 \textbf{The covariance matrix for log-returns of yields:}
+  
+```{r}
+# Build an empty covariance matrix for yields
+cov_matrix_ytm <- matrix(nrow = 9, ncol = 5)
+# Name the column of the covariance matrix for yields 
+colnames(cov_matrix_ytm) <- c("log_yield1","log_yield2","log_yield3",
+                             "log_yield4","log_yield5")
+# Name the row of the covariance matrix for yields
+rownames(cov_matrix_ytm) <-  seq(1,9,1)
+# Choose the bonds that matures in March. 
+seq <- as.vector(seq(1,9,2))
+for (i in c(1:5))
+  {
+  for (j in c(1:9))
+    {
+    #Calculate the covariance matrix for log-return of yields
+    cov_matrix_ytm[j,i]<- log(Yields_set[seq[i],j+1]/Yields_set[seq[i],j])
+  }
+}
+cov_matrix_ytm <- cov(cov_matrix_ytm)
+# Show the covariance matrix of log-yield.
+cov_matrix_ytm
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5.2 \textbf{The covariance matrix for log-returns of forward rates:}
+
+```{r}
+# Build an empty covariance matrix for forward rates
+cov_matrix_fwd <- matrix(nrow = 9,ncol = 4)
+# Name the column of the covariance matrix for forward rates
+colnames(cov_matrix_fwd) <- c("log_fwd_1yr1yr","log_fwd_1yr2yr",
+                                 "log_fwd_1yr3yr","log_fwd_1yr4yr")
+# Name the row of the covariance matrix for forward rates
+rownames(cov_matrix_fwd) <-  seq(1,9,1)
+
+for (i in c(1:4))
+  {
+  for (j in c(1:9))
+    {
+    #Calculate the covariance matrix for log-return of forward rates
+    log_fwd <- log(forward_set[i, j+1]/forward_set[i, j])
+    # Store the corresponding log_fwd to the covariance matrix
+    cov_matrix_fwd[j, i] <- log_fwd
+  }
+}
+
+cov_matrix_fwd<- cov(cov_matrix_fwd)
+cov_matrix_fwd 
+```
+
+The basic way for calculating the covariance matrix: First, build an empty covariance matrix for yield/forward rates. Next, name the columns and rows of the associated covariance matrix. Then, calculate the log difference of each selected data. Finally, calculate the covariance of each element and store them to a new matrix. The covariance of each pair of data seems very small.
+
+6.
+  \ 
+  
+  6.1 \textbf{The eigenvalues and eigenvectors of covariance matrix for log-returns of yield:}
+```{r}
+eigen(cov_matrix_ytm)
+```
+The first eigenvalue is about $0.001419158$, which implies the largest variation of the movement amonge these yields are very small. And its corresponding eigenvector is $[-0.01250372,-0.39249179,-0.47607332,-0.60731561]$, which points out the main direction of yield curves movement is same (downwards).
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6.2 \textbf{The eigenvalues and eigenvectors of covariance matrix for log-returns of forward rates:}
+```{r}
+eigen(cov_matrix_fwd)
+```
+The first eigenvalue is about $0.0243586179$, which implies the largest variation of the movement amonge these forward rates changes are very small, the cruves tend to move together with small variation. Its corresponding eigenvector is $[-0.1237691,-0.1977909,0.6797630,-0.6953289]$, which points out the main direction of the curves movement, there are positive and negative values so that it points out some curves may move opposite with other curves.
+
+\newpage
+\section*{References and GitHub Link to Code}
+
+Ross, S. (2022, December 19). The formula for converting spot rate to forward rate. Investopedia. Retrieved February 4, 2023, 
+from https://www.investopedia.com/ask/answers/043015/how-do-i-convert-spot-rate-forward-rate.asp 
+
+Seco, L. (n.d.). apm466-mat1856-library. Retrieved February 4, 2023, 
+from https://seco.risklab.ca/apm466-mat1856-library/# 
+
+Github Link:
+
+
+
+
+
+
