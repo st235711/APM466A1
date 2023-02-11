@@ -259,13 +259,13 @@ The basic way for calculating the covariance matrix: First, build an empty covar
 ```{r}
 eigen(cov_matrix_ytm)
 ```
-The first eigenvalue is about $0.001419158$, which implies the largest variation of the movement amonge these yields are very small. And its corresponding eigenvector is $[-0.01250372,-0.39249179,-0.47607332,-0.60731561]$, which points out the main direction of yield curves movement is same (downwards).
+The first eigenvalue is about $0.001419158$, which implies the largest variation of the movement among these yields are very small. And its corresponding eigenvector is $[-0.01250372,-0.39249179,-0.47607332,-0.60731561]$, which points out the main direction of yield curves movement is same (downwards).
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6.2 \textbf{The eigenvalues and eigenvectors of covariance matrix for log-returns of forward rates:}
 ```{r}
 eigen(cov_matrix_fwd)
 ```
-The first eigenvalue is about $0.0243586179$, which implies the largest variation of the movement amonge these forward rates changes are very small, the cruves tend to move together with small variation. Its corresponding eigenvector is $[-0.1237691,-0.1977909,0.6797630,-0.6953289]$, which points out the main direction of the curves movement, there are positive and negative values so that it points out some curves may move opposite with other curves.
+The first eigenvalue is about $0.0243586179$, which implies the largest variation of the movement among these forward rates changes are very small, the cruves tend to move together with small variation. Its corresponding eigenvector is $[-0.1237691,-0.1977909,0.6797630,-0.6953289]$, which points out the main direction of the curves movement, there are positive and negative values so that it points out some curves may move opposite with other curves.
 
 \newpage
 \section*{References and GitHub Link to Code}
